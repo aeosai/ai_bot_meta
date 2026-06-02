@@ -1,5 +1,5 @@
 # ai_bot_meta
-A Sovereign primal foundations to Claude bot &amp; Open Claw. Build your own Gemini. Odysseus by pewdiepie. So on, So fourth. 
+A Sovereign primal foundations to Claude bot &amp; Open Claw. Build your own Gemini. Odysseus by pewdiepie per linked https://www.youtube.com/watch?v=rAzT5lcezPs. So on, So fourth. 
 
 Mistral Brain req. It is the starter brain i used to build, you can re-code to utalise a different brain or even API. I downloaded mistralai/Mistral-7B-Instruct-v0.3 from Hugging Face https://huggingface.co › mistralai . I download the files and params and bins as its the brain into one folder. Than when clicking inject cortex in the HTML of Phosphorus select this brain and click Ignite to spark life.
 
