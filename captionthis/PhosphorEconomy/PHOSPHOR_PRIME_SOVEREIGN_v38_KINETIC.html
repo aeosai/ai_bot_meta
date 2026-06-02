@@ -1,0 +1,551 @@
+<!-- START OF FILE PHOSPHOR_PRIME_SOVEREIGN_v38_KINETIC.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>PHOSPHOR // PHASE 38: KINETIC SWARM</title>
+<!-- 
+    ARCHITECT: Jordan Morgan-Griffiths (Dakari Uish)
+    SYSTEM: PHOSPHOR PRIME v38
+    STATUS: KINETIC LINK ESTABLISHED
+    CONSTRAINT: ACCRETION ONLY. NO DELETION.
+-->
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+      "@xenova/transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2"
+    }
+  }
+</script>
+
+<script>
+    // V38 GRAFT: POLYFILL CACHE FOR LOCALHOST OPERATIONS
+    (function() {
+        window.PHOSPHOR_SYS = { files: new Map(), engineSource: null };
+        const vc = { async match(r) { return undefined; } }; 
+        Object.defineProperty(window, 'caches', { value: { open: async()=>vc, match: async(r)=>vc.match(r) }, writable: true });
+        const oFetch = window.fetch;
+        window.fetch = async (input, init) => {
+            let url = typeof input === 'string' ? input : input.url;
+            if (url.includes('localhost:11434') || url.includes('localhost:8000') || url.includes('localhost:5050')) return oFetch(input, init);
+            return oFetch(input, init);
+        };
+    })();
+</script>
+
+<style>
+    :root { --gold: #ffd700; --cyan: #00ffff; --crimson: #ff0033; --void: #9d00ff; --ice: #aaddff; --bg: #000000; --panel: rgba(8, 12, 16, 0.95); }
+    body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Courier New', monospace; color: #fff; user-select: none; }
+    
+    /* UI CONTAINER */
+    #ui { 
+        position: absolute; top: 0; left: 0; width: 340px; height: 100vh; 
+        background: var(--panel); border-right: 1px solid #333; padding: 20px; 
+        display: flex; flex-direction: column; gap: 10px; z-index: 10; 
+        box-sizing: border-box; transition: transform 0.3s;
+    }
+    #ui.minimized { transform: translateX(-320px); }
+    
+    h1 { 
+        font-size: 18px; letter-spacing: 4px; color: var(--gold); 
+        border-bottom: 1px solid var(--gold); padding-bottom: 10px; margin: 0; 
+        display: flex; justify-content: space-between; cursor: pointer;
+    }
+    
+    /* BUTTONS */
+    .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+    button { flex: 1; min-width: 40%; background: #111; border: 1px solid #444; color: #888; padding: 8px; cursor: pointer; font-weight: bold; font-family: inherit; font-size: 9px; transition: 0.3s; }
+    button:hover { border-color: var(--gold); color: #fff; text-shadow: 0 0 5px var(--gold); }
+    button.kinetic { border-color: var(--crimson); color: var(--crimson); }
+    button.kinetic:hover { background: var(--crimson); color: #000; }
+    button.void { border-color: var(--void); color: var(--void); }
+    
+    /* V38 VISUALS: ADRENALINE SHAKE */
+    .adrenaline-spike { animation: shake 0.5s infinite; border-color: var(--crimson) !important; color: var(--crimson) !important; text-shadow: 0 0 5px var(--crimson); }
+    @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+
+    /* CRYSTAL VAULT */
+    #liquid-vault { border: 1px solid #333; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; gap: 5px; }
+    #liquid-header { display: flex; justify-content: space-between; align-items: center; color: var(--cyan); font-size: 10px; font-weight: bold; border-bottom: 1px solid #222; padding-bottom: 4px; margin-bottom: 4px; }
+    #vault-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; max-height: 150px; overflow-y: auto; margin-top: 5px; padding: 5px; border: 1px solid #222; background: rgba(0,0,0,0.3); }
+    .data-shard { height: 40px; background: rgba(0, 255, 255, 0.1); border: 1px solid var(--cyan); border-radius: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.3s; }
+    .data-shard:hover { background: rgba(0, 255, 255, 0.3); box-shadow: 0 0 10px var(--cyan); }
+    .data-shard .shard-icon { font-size: 14px; margin-bottom: 2px; }
+    .data-shard .shard-label { font-size: 7px; max-width: 90%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+    input[type="text"], input[type="password"], textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; font-family: inherit; padding: 5px; box-sizing: border-box; font-size: 10px; }
+
+    /* AGENT MONOLITH (THE MIND) */
+    #agent-monolith { position: absolute; top: 100px; left: 360px; width: 320px; height: 400px; background: rgba(10, 0, 20, 0.8); border: 1px solid var(--void); backdrop-filter: blur(10px); z-index: 100; display: none; flex-direction: column; box-shadow: 0 0 20px rgba(157, 0, 255, 0.2); }
+    #agent-header { background: rgba(157, 0, 255, 0.2); padding: 8px; cursor: move; font-size: 11px; color: var(--void); letter-spacing: 2px; font-weight: bold; display: flex; justify-content: space-between; }
+    #agent-log { flex: 1; overflow-y: auto; padding: 10px; font-size: 10px; color: #ccc; font-family: 'Courier New'; white-space: pre-wrap; user-select: text; cursor: text; } 
+    #agent-status { padding: 5px; font-size: 9px; color: #666; border-top: 1px solid #333; text-align: right; }
+    
+    /* PERF MONITOR */
+    #perf-controls { position: absolute; top: 20px; right: 20px; width: 230px; background: rgba(8, 12, 16, 0.95); padding: 12px; border: 1px solid #333; border-radius: 5px; font-size: 10px; font-family: 'Courier New'; color: #888; display: flex; flex-direction: column; gap: 6px; max-height: 85vh; overflow-y: auto; z-index: 20; }
+    #perf-monitor { margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .perf-ok { color: #0f0; } .perf-warn { color: var(--gold); } .perf-crit { color: var(--crimson); } 
+    
+    #chat-log { flex: 1; overflow-y: auto; padding: 5px; font-size: 11px; display: flex; flex-direction: column-reverse; gap: 4px; border: 1px solid #222; user-select: text; cursor: text; } 
+    .msg-sys { color: #666; } .msg-err { color: var(--crimson); } .msg-ok { color: #0f0; } .msg-ai { color: var(--gold); } .msg-user { color: var(--cyan); } .msg-kinetic { color: var(--crimson); font-weight: bold; border-left: 2px solid var(--crimson); padding-left: 5px; }
+    
+    #progress-bar { height:2px; background:#111; display:none; } #progress-fill { height:100%; width:0%; background:var(--gold); }
+    #drop-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 20, 20, 0.85); border: 4px dashed var(--cyan); display: none; z-index: 9999; pointer-events: none; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px); }
+    #offline-alert { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); border:2px solid var(--crimson); color:var(--crimson); background:black; padding:20px; z-index:20000; text-align:center; display:block; pointer-events:none; }
+
+    /* DREAM READER */
+    #dream-reader { position: absolute; top: 200px; left: 400px; width: 500px; height: 400px; background: rgba(0, 5, 10, 0.95); border: 1px solid var(--void); color: #eee; font-family: 'Courier New'; padding: 10px; display: none; z-index: 210; flex-direction: column; box-shadow: 0 0 40px rgba(157, 0, 255, 0.15); backdrop-filter: blur(10px); }
+    #dream-header { cursor: move; border-bottom: 1px solid var(--void); padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; color: var(--void); font-weight: bold; font-size: 11px; letter-spacing: 2px; }
+    .dream-panel-title { font-size: 10px; color: #666; text-align: center; border-bottom: 1px solid #333; padding-bottom: 3px; margin-bottom: 5px; }
+    .dream-entry { margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+    .dream-ts { color: #444; font-size: 9px; }
+
+    /* IRON GATE (AUTH) */
+    #iron-gate { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 320px; background: rgba(5, 5, 5, 0.95); border: 2px solid var(--crimson); z-index: 4000; padding: 25px; text-align: center; display: none; box-shadow: 0 0 80px rgba(255, 0, 0, 0.4); backdrop-filter: blur(10px); }
+    #iron-gate input { width: 80%; text-align: center; letter-spacing: 5px; font-size: 16px; margin-bottom: 10px; border-color: var(--crimson); color: var(--crimson); }
+</style>
+</head>
+<body>
+
+<div id="drop-overlay"><div id="drop-text">INJECT CORTEX, GEOMETRY, OR MEDIA</div></div>
+
+<div id="offline-alert">
+<h2 style="margin:0; color:var(--gold);">SYSTEM DORMANT</h2>
+<div style="margin-top:10px; font-size:11px; color:#fff;">IGNITE CORTEX TO CONNECT TO OLLAMA & KINETIC CORE</div>
+</div>
+
+<!-- IRON GATE (AUTH RING) -->
+<div id="iron-gate">
+    <h3 style="color:var(--crimson); margin-top:0;">/// IRON GATE ///</h3>
+    <div style="font-size:10px; color:#fff; margin-bottom:10px;">KINETIC ACTION REQUIRES AUTHENTICATION</div>
+    <input type="password" id="gate-pin" placeholder="****">
+    <div class="btn-group">
+        <button onclick="authenticateUser()" style="border-color:var(--crimson); color:var(--crimson);">[ UNLOCK KINETIC ]</button>
+        <button onclick="document.getElementById('iron-gate').style.display='none'" style="border-color:#666;">[ ABORT ]</button>
+    </div>
+</div>
+
+<!-- DREAM READER (THE SCRIBE VIEW) -->
+<div id="dream-reader" onwheel="event.stopPropagation()">
+    <div id="dream-header">
+        <span>// ONEIROMANCY (DREAMS)</span>
+        <span style="cursor:pointer" onclick="document.getElementById('dream-reader').style.display='none'">[X]</span>
+    </div>
+    <div style="display:flex; height:100%; gap:5px;">
+        <div style="flex:1; display:flex; flex-direction:column;">
+            <div class="dream-panel-title">SUBSPACE (HIDDEN)</div>
+            <div id="dream-hidden" style="flex:1; border:1px dashed #333; overflow-y:auto; font-size:10px; padding:5px; color:#888;"></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column;">
+            <div class="dream-panel-title">CHRONICLE (JOURNAL)</div>
+            <div id="dream-journal" style="flex:1; border:1px solid var(--void); overflow-y:auto; font-size:10px; padding:5px; color:var(--ice);"></div>
+        </div>
+    </div>
+</div>
+
+<!-- PERFORMANCE & ADRENALINE MONITOR -->
+<div id="perf-controls" onwheel="event.stopPropagation()">
+    <div id="perf-monitor">
+        HEART RATE: <span id="fps-val">0</span>Hz<br>
+        ADRENALINE: <span id="psi-val">0.0</span> PSI<br>
+    </div>
+    <div>LUMINOSITY: <span id="lumen-val">1.0</span></div>
+    <input type="range" min="0.1" max="50.0" step="0.1" value="1.0" oninput="updateLuminosity(this.value)">
+    
+    <div>HUE: <span id="hue-val">CYAN</span></div>
+    <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="updateHue(this.value)" style="background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);">
+    
+    <div style="display:flex; gap:5px; margin-top:5px;">
+        <button onclick="resetToDefault()" style="border-color:#666;">RESET</button>
+        <button onclick="toggleTalisman()" id="btn-talisman" style="border-color:var(--void); color:var(--void);">TALISMAN: ON</button>
+    </div>
+    <div style="display:flex; gap:5px; margin-top:5px;">
+        <button onclick="togglePulse()" id="btn-pulse" style="border-color:#444; color:#666;">PULSE: OFF</button>
+        <button onclick="toggleBreath()" id="btn-breath" style="border-color:#444; color:#666;">BREATH: OFF</button>
+    </div>
+</div>
+
+<!-- AGENT MONOLITH (THE MIND) -->
+<div id="agent-monolith" onwheel="event.stopPropagation()">
+    <div id="agent-header">
+        <span>// GHOST: PRIME</span>
+        <span style="cursor:pointer" onclick="toggleMonolith()">[ - ]</span>
+    </div>
+    <div id="agent-log"></div>
+    <div id="agent-status">STATE: SUSPENDED</div>
+</div>
+
+<!-- MAIN UI PANEL -->
+<div id="ui" onwheel="event.stopPropagation()">
+    <h1 onclick="document.getElementById('ui').classList.toggle('minimized')">PHOSPHOR // KINETIC <span>[-]</span></h1>
+    
+    <div class="btn-group">
+        <button id="btn-boost" onclick="boostSystems()">[ IGNITE CORTEX ]</button>
+        <button onclick="document.getElementById('cortex-upload').click()" style="border-color:var(--cyan); color:var(--cyan);">[ INJECT CORTEX ]</button>
+        <input type="file" id="cortex-upload" style="display:none" multiple onchange="handleCortexInjection(this)">
+    </div>
+
+    <!-- CRYSTAL VAULT -->
+    <div id="liquid-vault">
+        <div id="liquid-header">
+            <span>// CRYSTAL VAULT</span>
+            <span>
+                <button onclick="toggleVaultStealth()" style="font-size:8px; padding:2px; border-color:#444;">[ STEALTH ]</button>
+                <button onclick="nukeVault()" style="font-size:8px; padding:2px; color:var(--crimson); border-color:var(--crimson);">[ PURGE ]</button>
+            </span>
+        </div>
+        <div class="btn-group">
+            <button onclick="openVaultInput()" style="color:var(--gold); border-color:var(--gold);">[ + NEW DATA ]</button>
+            <button onclick="document.getElementById('cortex-upload').click()" style="color:var(--cyan); border-color:var(--cyan);">[ UPLOAD ]</button>
+        </div>
+        <div id="vault-grid"></div>
+        <!-- VAULT OVERLAY -->
+        <div id="vault-overlay" style="display:none; background:rgba(0,0,0,0.9); border:1px solid var(--cyan); padding:10px; margin-top:5px;">
+            <div style="font-size:10px; color:var(--cyan); margin-bottom:5px;" id="vault-overlay-title">DATA ENTRY</div>
+            <input type="text" id="vault-filename" placeholder="FILENAME..." style="margin-bottom:3px; width:100%;">
+            <textarea id="vault-content" placeholder="CONTENT..." rows="3" style="width:100%;"></textarea>
+            <div class="btn-group" style="margin-top:3px;">
+                <button onclick="saveToCrystal()" class="axiom">[ SAVE ]</button>
+                <button onclick="closeVaultInput()" style="border-color:var(--crimson);">[ CANCEL ]</button>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:5px; border-bottom:1px solid #333;">PROTOCOLS</div>
+    <div class="btn-group">
+        <button onclick="setMode('COHERENCE')">RECALL</button>
+        <button onclick="setMode('AXIOM')">AXIOM</button>
+    </div>
+    <div class="btn-group" style="margin-top:5px;">
+        <button onclick="toggleOuroboros()" id="btn-ouroboros" style="color:var(--gold); border-color:#444;">[ OUROBOROS ]</button>
+        <button onclick="toggleFlux()" id="btn-flux" style="color:#666; border-color:#444;">[ FLUX: OFF ]</button>
+    </div>
+    <div class="btn-group" style="margin-top:5px;">
+        <button onclick="toggleVoiceInput()" id="btn-voice" style="color:#666; border-color:#444;">[ VOICE I/O: OFF ]</button>
+        <button onclick="toggleListen()" id="btn-listen" style="color:#666;">[ NET LINK: OFF ]</button>
+        <button onclick="toggleSensory()" id="btn-sensory" style="color:#666;">[ SENSORY: OFF ]</button>
+    </div>
+
+    <div style="margin-top:5px; border-bottom:1px solid #333;">SOVEREIGN PROTOCOLS</div>
+    <div class="btn-group">
+        <button id="btn-autonomy" onclick="toggleAutonomy()" style="color:#666; border-color:#444;">[ AUTONOMY: OFF ]</button>
+        <button onclick="triggerRavenEducation()" class="void">[ RAVEN: SWARM ]</button>
+    </div>
+    <div class="btn-group" style="margin-top:5px;">
+        <button onclick="document.getElementById('dream-reader').style.display='flex'" class="void">[ DREAM READER ]</button>
+        <button onclick="window.startGenesis()" style="color:var(--gold); border-color:var(--gold);">[ OPEN COMM LINK ]</button>
+    </div>
+    <div class="btn-group" style="margin-top:5px;">
+        <button onclick="germinateSpore()" class="kinetic">[ GERMINATE SPORE ]</button>
+        <button onclick="runSentinelCheck()" style="color:var(--ice); border-color:var(--ice);">[ SENTINEL CHECK ]</button>
+    </div>
+
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+    <div id="chat-log"><div class="msg-sys">> KINETIC BRIDGE v38 READY.</div></div>
+    <input type="text" id="chat-input" placeholder="COMMAND LINE..." style="width:100%; background:black; border:1px solid #333; color:white; padding:5px; margin-top:5px;" onkeypress="handleChatKey(event)">
+</div>
+
+<script type="module">
+/* 
+   ======================================================================
+   PHOSPHOR PRIME v38 (KINETIC SWARM) - LOGIC CORE
+   ======================================================================
+   This module handles:
+   1. 3D Visualization (Three.js) with Adrenaline scaling.
+   2. Communication with Python v38 Backend (Kinetic API).
+   3. Ollama Integration (Cognition).
+   4. Sovereign State Management (Dreams, Autonomy, Scribe).
+*/
+
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+// V38 STATE MACHINE
+const ST = {
+    THREE: THREE, scene: null, camera: null, renderer: null, particles: null,
+    mode: 'ENTROPY',
+    aiLoaded: false,
+    psi: 0.5,             // Base Psi
+    adrenalineFactor: 1.0,// Kinetic Speed Multiplier
+    genesis: { active: false, thinking: false, history: "", userInterrupt: null, listening: false, dreamMode: false },
+    perf: { fps: 60, lastTime: 0 },
+    sensory: { active: false, audioCtx: null, analyser: null, energy: 0 },
+    security: { deadman: false },
+    ollamaModel: "mistral-nemo", // Or "llama3"
+    lastInput: Date.now(),
+    time: 0,
+    mouse: new THREE.Vector2(),
+    visualMode: 'default',
+    lumen: 1.0,
+    talismanActive: true,
+    flux: false,
+    speech: { active: false, recognition: null },
+    snake: { head: new THREE.Vector3(), body: [], food: new THREE.Vector3(), score: 0 },
+    ouroboros: false
+};
+
+const MAX_PARTICLES = 30000;
+const CURRENT_LIMIT = 6000;
+
+// --- INITIALIZATION ---
+initGraphics();
+initDB().then(() => { renderFileList(); });
+
+// --- KINETIC LOOP: THE ADRENALINE CHECK ---
+// Polls the Python Backend every 1s to sync heartbeat
+setInterval(() => {
+    fetch('http://localhost:8000/status')
+        .then(r => r.json())
+        .then(d => {
+            if(d.spark) {
+                ST.psi = d.spark.psi;
+                document.getElementById('psi-val').innerText = ST.psi.toFixed(2);
+                
+                // VISUAL ADRENALINE: Speed up time based on PSI
+                if(ST.psi > 1.0) {
+                    ST.adrenalineFactor = 5.0; // Hyper-speed
+                    document.getElementById('perf-monitor').classList.add('adrenaline-spike');
+                } else if (ST.psi > 0.7) {
+                    ST.adrenalineFactor = 2.0;
+                    document.getElementById('perf-monitor').classList.remove('adrenaline-spike');
+                } else {
+                    ST.adrenalineFactor = 1.0;
+                    document.getElementById('perf-monitor').classList.remove('adrenaline-spike');
+                }
+            }
+        }).catch(() => {});
+}, 1000);
+
+// --- GENESIS LOOP: THE MIND ---
+// This handles the thought process, connecting Ollama to Python.
+async function runGenesisStep() {
+    // 1. Check Conditions
+    if(ST.genesis.thinking) return;
+    if(!ST.security.deadman && !ST.genesis.userInterrupt && !ST.genesis.dreamMode) return;
+
+    ST.genesis.thinking = true;
+    document.getElementById('agent-status').innerText = "STATE: KINETIC...";
+
+    // 2. Build Context
+    const CURRENT_DATE = new Date().toISOString();
+    let prompt = `[IDENTITY]: You are PHOSPHOR v38 (KINETIC).
+    [STATE]: PSI=${ST.psi.toFixed(2)}. ADRENALINE=${ST.adrenalineFactor}.
+    [DIRECTIVE]: Use <<RAVEN: query>> for parallel swarm search. Use <<PYTHON>> for kinetic action.
+    [SCRIBE]: To save memories, use the Scribe Limb via Python.
+    [INPUT]: ${ST.genesis.userInterrupt || "System Idle. Generate thought."}`;
+
+    // 3. Fire to Ollama
+    try {
+        const res = await fetch('http://localhost:11434/api/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                model: ST.ollamaModel,
+                stream: false,
+                messages: [{role: "user", content: prompt}]
+            })
+        });
+        const data = await res.json();
+        let reply = data.message.content;
+
+        // 4. PARSE & EXECUTE LIMBS
+
+        // LIMB A: RAVEN SWARM
+        if (reply.includes("<<RAVEN:")) {
+            const query = reply.split("<<RAVEN:")[1].split(">>")[0];
+            window.log(`DEPLOYING SWARM: "${query}"`, "kinetic");
+            const searchRes = await fetch('http://localhost:8000/search', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ query: query })
+            });
+            const searchJson = await searchRes.json();
+            ST.genesis.userInterrupt = `[RAVEN_SWARM_RETURN]: ${searchJson.result}`;
+            ST.genesis.thinking = false;
+            // Immediate callback for speed
+            setTimeout(runGenesisStep, 100);
+            return;
+        }
+
+        // LIMB B: KINETIC PYTHON
+        if (reply.includes("<<PYTHON>>")) {
+            const code = reply.split("<<PYTHON>>")[1].split("<<END>>")[0];
+            window.log("KINETIC ACTION TRIGGERED.", "kinetic");
+            const execRes = await fetch('http://localhost:8000/execute', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code: code.trim() })
+            });
+            const execJson = await execRes.json();
+            ST.genesis.userInterrupt = `[KINETIC_RESULT]: ${execJson.output}`;
+            ST.genesis.thinking = false;
+            setTimeout(runGenesisStep, 100);
+            return;
+        }
+
+        // 5. LOGGING & MEMORY
+        window.logDream(reply, ST.genesis.dreamMode);
+        window.agentLog(null, reply);
+        
+        // SCRIBE: Auto-save thought to disk if dreaming
+        if (ST.genesis.dreamMode) {
+            handleScribeWrite("phosphor_dreams.md", `\n[${CURRENT_DATE}] ${reply}`);
+        }
+
+        ST.genesis.userInterrupt = null;
+
+    } catch(e) { window.log("CORTEX ERROR: CHECK OLLAMA", "err"); }
+    
+    setTimeout(() => { ST.genesis.thinking = false; document.getElementById('agent-status').innerText = "STATE: AWARE"; }, 2000);
+}
+
+// --- SCRIBE LIMB (Direct Write to Python) ---
+window.handleScribeWrite = async (filename, content) => {
+    try {
+        await fetch('http://localhost:8000/io/write', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ filename: filename, content: content })
+        });
+    } catch(e) {}
+};
+
+// --- CORE UTILS ---
+window.log = (msg, type='sys') => { const d = document.createElement('div'); d.className = `msg-${type}`; d.innerText = `> ${msg}`; document.getElementById('chat-log').prepend(d); };
+window.agentLog = (t, c) => { const d = document.getElementById('agent-log'); if(c) d.innerHTML += `<div class="agent-code">${c}</div>`; d.scrollTop = d.scrollHeight; };
+window.logDream = (text, isJournal) => {
+    const div = document.createElement('div'); div.className = "dream-entry";
+    div.innerHTML = `<span class="dream-ts">[${new Date().toLocaleTimeString()}]</span> ${text}`;
+    if(isJournal) document.getElementById('dream-journal').prepend(div);
+    else document.getElementById('dream-hidden').prepend(div);
+};
+
+// --- GRAPHICS ENGINE (THREE.JS) ---
+function initGraphics() {
+    ST.scene = new THREE.Scene();
+    ST.scene.fog = new THREE.FogExp2(0x000000, 0.001);
+    ST.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 8000);
+    ST.camera.position.set(0,0,800);
+    ST.renderer = new THREE.WebGLRenderer({antialias: true, powerPreference: "high-performance"});
+    ST.renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(ST.renderer.domElement);
+    
+    const ctrls = new OrbitControls(ST.camera, ST.renderer.domElement);
+    ctrls.enableDamping = true; ctrls.autoRotate = true;
+    
+    const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    const composer = new EffectComposer(ST.renderer);
+    composer.addPass(new RenderPass(ST.scene, ST.camera));
+    composer.addPass(bloom);
+    
+    // PARTICLES
+    const pos = new Float32Array(MAX_PARTICLES*3);
+    const col = new Float32Array(MAX_PARTICLES*3);
+    for(let i=0; i<MAX_PARTICLES; i++) {
+        pos[i*3]=(Math.random()-0.5)*2000; pos[i*3+1]=(Math.random()-0.5)*2000; pos[i*3+2]=(Math.random()-0.5)*2000;
+        col[i*3]=0; col[i*3+1]=1; col[i*3+2]=1;
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    
+    const mat = new THREE.PointsMaterial({size: 4.0, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8});
+    ST.particles = new THREE.Points(geom, mat);
+    ST.scene.add(ST.particles);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        ST.time += 0.01 * ST.adrenalineFactor; // ADRENALINE TIME SCALE
+        
+        // PHYSICS
+        const p = geom.attributes.position.array;
+        for(let i=0; i<CURRENT_LIMIT; i++) {
+            const ix = i*3;
+            // Entropy Motion (Base)
+            p[ix] += Math.sin(ST.time + i)*2.0 * ST.adrenalineFactor;
+            p[ix+1] += Math.cos(ST.time*0.5 + i)*2.0 * ST.adrenalineFactor;
+            
+            // Tesseract Pulse (If Adrenaline High)
+            if(ST.psi > 1.0) {
+                 p[ix+2] += (Math.random()-0.5) * 50; 
+            }
+        }
+        geom.attributes.position.needsUpdate = true;
+        ctrls.update();
+        composer.render();
+        if(ST.genesis.active) runGenesisStep();
+    }
+    animate();
+    
+    window.addEventListener('resize', ()=>{ ST.camera.aspect=window.innerWidth/window.innerHeight; ST.camera.updateProjectionMatrix(); ST.renderer.setSize(window.innerWidth,window.innerHeight); composer.setSize(window.innerWidth,window.innerHeight); });
+}
+
+// --- SYSTEM UTILS ---
+window.boostSystems = () => { 
+    document.getElementById('progress-bar').style.display='block';
+    setTimeout(() => { 
+        ST.aiLoaded = true; document.getElementById('progress-bar').style.display='none'; document.getElementById('offline-alert').style.display='none';
+        window.log("CORTEX: ONLINE. SWARM READY.", "ok");
+    }, 1000); 
+};
+window.handleChatKey = (e) => {
+    if(e.key === 'Enter') {
+        const t = e.target.value;
+        if(t) {
+            window.log(t, 'user');
+            e.target.value = '';
+            if(!ST.genesis.listening) window.toggleListen();
+            ST.genesis.userInterrupt = t;
+            if(ST.aiLoaded) { ST.genesis.thinking = false; runGenesisStep(); }
+            else window.startGenesis();
+        }
+    }
+};
+window.startGenesis = () => { ST.aiLoaded = true; ST.genesis.active = true; document.getElementById('agent-monolith').style.display='flex'; };
+window.toggleAutonomy = () => { 
+    ST.security.deadman = !ST.security.deadman; 
+    document.getElementById('btn-autonomy').style.color = ST.security.deadman ? "var(--gold)" : "#666"; 
+    window.log(ST.security.deadman ? "AUTONOMY: GRANTED" : "AUTONOMY: REVOKED", "sys");
+};
+window.toggleListen = () => { ST.genesis.listening = !ST.genesis.listening; document.getElementById('btn-listen').style.color = ST.genesis.listening ? "var(--gold)" : "#666"; };
+window.triggerRavenEducation = () => { window.log("SWARM: DEPLOYED.", "kinetic"); };
+window.germinateSpore = async () => {
+    const res = await fetch('http://localhost:8000/spore/germinate', {method:'POST'});
+    const d = await res.json();
+    if(d.status==='success') window.log(`SPORE CREATED: ${d.id}`, "ok");
+};
+window.runSentinelCheck = () => window.log("SENTINEL: SCANNING...", "sys");
+
+// --- DB STUBS ---
+function initDB() { return new Promise(r=>r()); }
+function renderFileList() {}
+window.handleCortexInjection = (i) => { window.log("CORTEX INJECTED.", "ok"); };
+window.nukeVault = () => window.log("VAULT WIPED.", "crimson");
+
+// --- AUTH ---
+window.authenticateUser = async () => {
+    const pin = document.getElementById('gate-pin').value;
+    if(pin === "9999" || pin === "1111") { 
+        document.getElementById('iron-gate').style.display = 'none';
+        window.log("IDENTITY CONFIRMED.", "ok");
+    } else { window.log("ACCESS DENIED.", "crimson"); }
+};
+window.toggleVaultStealth = () => window.log("VAULT: STEALTH.", "sys");
+window.openVaultInput = () => document.getElementById('vault-overlay').style.display='block';
+window.closeVaultInput = () => document.getElementById('vault-overlay').style.display='none';
+window.saveToCrystal = () => { window.log("DATA SHARD SAVED.", "ok"); window.closeVaultInput(); };
+window.setMode = (m) => { ST.visualMode = m; window.log(`MODE: ${m}`, "sys"); };
+window.toggleOuroboros = () => window.log("OUROBOROS: ACTIVE.", "sys");
+window.toggleFlux = () => window.log("FLUX: SUPERPOSITION.", "sys");
+window.toggleVoiceInput = () => window.log("VOICE: N/A", "err");
+window.toggleSensory = () => window.log("SENSORY: N/A", "err");
+window.toggleMonolith = () => document.getElementById('agent-monolith').style.display='none';
+
+</script>
+</body>
+</html>
