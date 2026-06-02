@@ -14,3 +14,5 @@ I've organised everything by ease of use, prioritising the components that can b
 The Economy folder may appear large, but all of the contents are interconnected and form part of the same overall system, including the Tier 1, Tier 2, and Tier 3 components of each feature.
 
 Once everything is running locally on your computer, you can migrate it to a server if needed. From there, you can rebuild, tweak, edit, expand existing features, or even create an entirely new companion from scratch.
+
+While it lasts feel open to check out my videos and the links in the bio as to the journey: https://www.youtube.com/watch?v=jbrRQEVksGs. not for the weak.
